@@ -192,6 +192,7 @@ def render_config(
         "",
         "log:",
         "  level: info",
+        "  exec: debug",
         "",
     ])
     return "\n".join(lines)
