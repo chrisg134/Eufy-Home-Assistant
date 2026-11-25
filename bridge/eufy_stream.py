@@ -443,7 +443,7 @@ async def main():
             "-f", "hevc", "-r", "25", "-i", "pipe:",
             *vcodec, "-rtsp_transport", "tcp", "-f", "rtsp", RTSP_URL,
             stdin=asyncio.subprocess.PIPE, stdout=asyncio.subprocess.DEVNULL,
-            stderr=asyncio.subprocess.DEVNULL)
+            stderr=asyncio.subprocess.PIPE)
         sink = ffmpeg_proc.stdin
         # RTSP_URL may contain the local go2rtc password; never print it.
         log(f"ffmpeg publishing {_codec_label} to the configured RTSP endpoint")
@@ -643,6 +643,12 @@ async def main():
         log(f"WSS connected; joining with {CALL_TYPE} signaling..."); await sig.join()
         answered = [False]; pending = []
         ffmpeg_watchdog_task = None
+                                   
+        async def ffmpeg_stderr_reader():
+            async for line in ffmpeg_proc.stderr:
+                msg = line.decode("utf-8", "replace").rstrip()
+                if msg:
+                    log(f"FFMPEG: {msg}")
 
         async def ffmpeg_watchdog():
             rc = await ffmpeg_proc.wait()
@@ -652,6 +658,7 @@ async def main():
                 await ws.close()
 
         if ffmpeg_proc is not None:
+            asyncio.create_task(ffmpeg_stderr_reader())
             ffmpeg_watchdog_task = asyncio.create_task(ffmpeg_watchdog())
 
         async def add_cand(cand):
