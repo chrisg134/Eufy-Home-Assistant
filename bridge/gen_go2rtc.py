@@ -194,6 +194,7 @@ def render_config(
         "  level: info",
         "  exec: debug",
         "  streams: debug",
+        "  rtsp: debug",
         "",
     ])
     return "\n".join(lines)
